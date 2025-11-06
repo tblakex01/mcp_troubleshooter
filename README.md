@@ -224,15 +224,15 @@ Cons: Requires being in parent directory
 
 ## 🛠 Available Tools
 
-| Tool | Description | Example Usage |
-|------|-------------|---------------|
-| `troubleshooting_get_system_info` | Get comprehensive system details | "What are the system specs?" |
-| `troubleshooting_monitor_resources` | Monitor CPU, memory, disk, network | "Show current resource usage" |
-| `troubleshooting_read_log_file` | Read and filter log files | "Show last 100 lines of syslog" |
-| `troubleshooting_test_network_connectivity` | Test host/port connectivity | "Can I reach google.com?" |
-| `troubleshooting_search_processes` | Search running processes | "Is nginx running?" |
-| `troubleshooting_inspect_environment` | Check environment variables & tools | "What dev tools are installed?" |
-| `troubleshooting_execute_safe_command` | Run whitelisted commands | "Run df -h to check disk space" |
+| Tool                                        | Description                         | Example Usage                   |
+| ------------------------------------------- | ----------------------------------- | ------------------------------- |
+| `troubleshooting_get_system_info`           | Get comprehensive system details    | "What are the system specs?"    |
+| `troubleshooting_monitor_resources`         | Monitor CPU, memory, disk, network  | "Show current resource usage"   |
+| `troubleshooting_read_log_file`             | Read and filter log files           | "Show last 100 lines of syslog" |
+| `troubleshooting_test_network_connectivity` | Test host/port connectivity         | "Can I reach google.com?"       |
+| `troubleshooting_search_processes`          | Search running processes            | "Is nginx running?"             |
+| `troubleshooting_inspect_environment`       | Check environment variables & tools | "What dev tools are installed?" |
+| `troubleshooting_execute_safe_command`      | Run whitelisted commands            | "Run df -h to check disk space" |
 
 For detailed tool documentation and examples, see [docs/EXAMPLES.md](docs/EXAMPLES.md).
 
@@ -377,13 +377,13 @@ python -c "from src.troubleshooting_mcp import mcp; print('Import successful')"
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
-| [README.md](README.md) | This file - Overview and getting started |
-| [docs/QUICKSTART.md](docs/QUICKSTART.md) | 5-minute quick start guide |
-| [docs/EXAMPLES.md](docs/EXAMPLES.md) | Detailed usage examples for each tool |
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Version history and changes |
-| [config/claude_desktop_config.example.json](config/claude_desktop_config.example.json) | Example Claude Desktop configuration |
+| Document                                                                               | Description                              |
+| -------------------------------------------------------------------------------------- | ---------------------------------------- |
+| [README.md](README.md)                                                                 | This file - Overview and getting started |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md)                                               | 5-minute quick start guide               |
+| [docs/EXAMPLES.md](docs/EXAMPLES.md)                                                   | Detailed usage examples for each tool    |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md)                                                 | Version history and changes              |
+| [config/claude_desktop_config.example.json](config/claude_desktop_config.example.json) | Example Claude Desktop configuration     |
 
 ---
 
@@ -495,6 +495,6 @@ For issues, questions, or suggestions:
 
 ---
 
-**Made with ❤️ for developers and system administrators**
+**Made for developers and system administrators**
 
-*Last Updated: 2025-01-05 | Version: 1.0.0*
+*Last Updated: 2025-11-05 | Version: 1.0.0*

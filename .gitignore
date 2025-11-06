@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# extraneous guides
+DEVELOPMENT_SETUP_COMPLETE.md
+
 # C extensions
 *.so
 
