@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "troubleshooting": {
+      "command": "python",
+      "args": [
+        "/absolute/path/to/troubleshooting_mcp.py"
+      ],
+      "env": {
+        "PYTHONPATH": "/path/to/additional/modules",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

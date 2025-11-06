@@ -1,0 +1,17 @@
+# Development dependencies for Troubleshooting MCP Server
+
+# Base requirements
+-r requirements.txt
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+
+# Code quality
+black>=25.0.0
+ruff>=0.14.0
+
+# Type checking (optional)
+mypy>=1.0.0
+
