@@ -90,7 +90,6 @@ def register_network_diagnostic(mcp):
                     result_lines.append("✓ **Connection:** Success")
                     result_lines.append(f"  - Port {params.port} is OPEN")
                     result_lines.append(f"  - Connection Time: {connect_time:.2f}ms")
-                    sock.close()
                 except TimeoutError:
                     result_lines.append("✗ **Connection:** Timeout")
                     result_lines.append(
