@@ -17,18 +17,12 @@ import pytest
 
 def test_python_version():
     """Verify Python version is 3.10+"""
-    print("Testing Python version...", end=" ")
     version = sys.version_info
-    if version.major >= 3 and version.minor >= 10:
-        print(f"✓ Python {version.major}.{version.minor}.{version.micro}")
-        return True
-    else:
-        print(f"✗ Python {version.major}.{version.minor}.{version.micro} (requires 3.10+)")
-        return False
+    assert version.major >= 3 and version.minor >= 10, \
+        f"Python {version.major}.{version.minor}.{version.micro} is below required 3.10+"
 
 def test_dependencies():
     """Verify all required packages are installed"""
-    print("\nTesting dependencies...")
     dependencies = {
         'mcp': 'mcp',
         'psutil': 'psutil',
@@ -63,82 +57,53 @@ def test_server_imports():
 
 def test_psutil_functionality():
     """Verify psutil can access system information"""
-    print("\nTesting psutil functionality...")
-    try:
-        import psutil
+    import psutil
 
-        # Test CPU
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        print(f"  ✓ CPU monitoring (current: {cpu_percent}%)")
+    # Test CPU
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    assert cpu_percent >= 0.0
 
-        # Test memory
-        mem = psutil.virtual_memory()
-        print(f"  ✓ Memory monitoring (used: {mem.percent}%)")
+    # Test memory
+    mem = psutil.virtual_memory()
+    assert mem.percent >= 0.0
 
-        # Test disk
-        disk = psutil.disk_usage('/')
-        print(f"  ✓ Disk monitoring (used: {disk.percent}%)")
+    # Test disk
+    disk = psutil.disk_usage('/')
+    assert disk.percent >= 0.0
 
-        # Test processes
-        process_count = len(list(psutil.process_iter()))
-        print(f"  ✓ Process monitoring ({process_count} processes)")
-
-        return True
-    except Exception as e:
-        print(f"  ✗ Error: {str(e)}")
-        return False
+    # Test processes
+    process_count = len(list(psutil.process_iter()))
+    assert process_count > 0
 
 def test_pydantic_models():
     """Verify Pydantic models work correctly"""
-    print("\nTesting Pydantic validation...", end=" ")
-    try:
-        from pydantic import BaseModel, ConfigDict, Field
+    from pydantic import BaseModel, ConfigDict, Field, ValidationError
+    import pytest
 
-        class TestModel(BaseModel):
-            model_config = ConfigDict(
-                str_strip_whitespace=True,
-                validate_assignment=True
-            )
-            test_field: str = Field(..., min_length=1)
+    class TestModel(BaseModel):
+        model_config = ConfigDict(
+            str_strip_whitespace=True,
+            validate_assignment=True
+        )
+        test_field: str = Field(..., min_length=1)
 
-        # Test valid input
-        model = TestModel(test_field="test")
+    # Test valid input
+    model = TestModel(test_field="test")
+    assert model.test_field == "test"
 
-        # Test validation
-        try:
-            TestModel(test_field="")
-        except:
-            pass  # Expected to fail
-
-        print("✓")
-        return True
-    except Exception as e:
-        print(f"✗\n  Error: {str(e)}")
-        return False
+    # Test validation should fail for empty string
+    with pytest.raises(ValidationError):
+        TestModel(test_field="")
 
 def test_command_availability():
     """Test availability of common diagnostic commands"""
-    print("\nTesting diagnostic command availability...")
     import shutil
 
     commands = ['ping', 'netstat', 'df', 'free', 'uptime']
-    available = []
-    unavailable = []
+    available = [cmd for cmd in commands if shutil.which(cmd)]
 
-    for cmd in commands:
-        if shutil.which(cmd):
-            available.append(cmd)
-            print(f"  ✓ {cmd}")
-        else:
-            unavailable.append(cmd)
-            print(f"  - {cmd} (not found)")
-
-    if len(available) > 0:
-        print(f"\n  {len(available)}/{len(commands)} diagnostic commands available")
-        return True
-    else:
-        print("\n  Warning: No diagnostic commands found")
-        return False
+    # At least some commands should be available on most systems
+    assert len(available) > 0, "No diagnostic commands found on system"
 
 def print_summary(results):
     """Print test summary"""
