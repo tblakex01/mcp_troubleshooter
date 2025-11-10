@@ -12,6 +12,7 @@ Usage:
 
 import os
 import sys
+import pytest
 
 
 def test_python_version():
@@ -31,17 +32,28 @@ def test_dependencies():
     for package, import_name in dependencies.items():
         try:
             __import__(import_name)
-        except ImportError:
-            assert False, f"{package} is not installed"
+            print(f"  ✓ {package}")
+        except (ImportError, ModuleNotFoundError) as e:
+            pytest.fail(f"{package} (not installed): {str(e)}")
+
+    return True
 
 def test_server_imports():
     """Verify the server file can be imported"""
+    print("\nTesting server imports...", end=" ")
+    # Add current directory to path
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
     try:
-        from troubleshooting_mcp.server import main, mcp
-        assert mcp is not None
-        assert callable(main)
-    except Exception as e:
-        assert False, f"Server import failed: {str(e)}"
+        from troubleshooting_mcp import server
+        assert hasattr(server, 'mcp'), "Server module missing 'mcp' attribute"
+        assert hasattr(server, 'main'), "Server module missing 'main' function"
+        print("✓")
+        return True
+    except (ImportError, ModuleNotFoundError) as e:
+        pytest.fail(f"Failed to import server module: {str(e)}")
+    except AssertionError as e:
+        pytest.fail(str(e))
 
 def test_psutil_functionality():
     """Verify psutil can access system information"""
