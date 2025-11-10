@@ -12,6 +12,7 @@ Usage:
 
 import os
 import sys
+import pytest
 
 
 def test_python_version():
@@ -20,28 +21,26 @@ def test_python_version():
     assert version.major >= 3 and version.minor >= 10, \
         f"Python {version.major}.{version.minor}.{version.micro} is below required 3.10+"
 
-def test_dependencies():
+@pytest.mark.parametrize("package,import_name", [
+    ('mcp', 'mcp'),
+    ('psutil', 'psutil'),
+    ('pydantic', 'pydantic'),
+])
+def test_dependencies(package, import_name):
     """Verify all required packages are installed"""
-    dependencies = {
-        'mcp': 'mcp',
-        'psutil': 'psutil',
-        'pydantic': 'pydantic'
-    }
-
-    for package, import_name in dependencies.items():
-        try:
-            __import__(import_name)
-        except ImportError:
-            assert False, f"{package} is not installed"
+    try:
+        __import__(import_name)
+    except ImportError:
+        pytest.fail(f"{package} is not installed")
 
 def test_server_imports():
     """Verify the server file can be imported"""
     try:
-        from troubleshooting_mcp.server import main, mcp
-        assert mcp is not None
-        assert callable(main)
-    except Exception as e:
-        assert False, f"Server import failed: {str(e)}"
+        from src.troubleshooting_mcp.server import main, mcp
+        assert mcp is not None, "Server module missing 'mcp' attribute"
+        assert callable(main), "Server module 'main' is not callable"
+    except ImportError as e:
+        pytest.fail(f"Failed to import server module: {str(e)}")
 
 def test_psutil_functionality():
     """Verify psutil can access system information"""
@@ -93,54 +92,30 @@ def test_command_availability():
     # At least some commands should be available on most systems
     assert len(available) > 0, "No diagnostic commands found on system"
 
-def print_summary(results):
-    """Print test summary"""
-    print("\n" + "="*50)
-    print("TEST SUMMARY")
+def main():
+    """Run all tests using pytest"""
     print("="*50)
-
-    passed = sum(results.values())
-    total = len(results)
-
-    for test_name, passed_test in results.items():
-        status = "✓ PASS" if passed_test else "✗ FAIL"
-        print(f"{status}: {test_name}")
-
+    print("TROUBLESHOOTING MCP SERVER - TEST SUITE")
     print("="*50)
-    print(f"Results: {passed}/{total} tests passed")
+    print("\nRunning tests with pytest...\n")
 
-    if passed == total:
+    # Run pytest with verbose output
+    exit_code = pytest.main([__file__, '-v', '--tb=short'])
+
+    if exit_code == 0:
         print("\n✓ All tests passed! Server is ready to use.")
         print("\nNext steps:")
         print("1. Review QUICKSTART.md for configuration instructions")
         print("2. Add server to Claude Desktop config")
         print("3. Restart Claude Desktop")
-        return True
     else:
         print("\n✗ Some tests failed. Please resolve issues before proceeding.")
         print("\nTo fix issues:")
         print("1. Install missing dependencies: pip install -r requirements.txt")
         print("2. Verify Python version is 3.10 or higher")
-        print("3. Check that troubleshooting_mcp.py is in the current directory")
-        return False
+        print("3. Check that troubleshooting_mcp package is installed")
 
-def main():
-    """Run all tests"""
-    print("="*50)
-    print("TROUBLESHOOTING MCP SERVER - TEST SUITE")
-    print("="*50)
-
-    results = {
-        "Python Version": test_python_version(),
-        "Dependencies": test_dependencies(),
-        "Server Imports": test_server_imports(),
-        "psutil Functionality": test_psutil_functionality(),
-        "Pydantic Validation": test_pydantic_models(),
-        "Command Availability": test_command_availability()
-    }
-
-    success = print_summary(results)
-    sys.exit(0 if success else 1)
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     main()
