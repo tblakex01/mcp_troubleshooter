@@ -5,7 +5,7 @@ Log File Reader Tool - Read and analyze system log files.
 import os
 from pathlib import Path
 
-from ..constants import COMMON_LOG_PATHS
+from ..constants import COMMON_LOG_PATHS, ALLOWED_LOG_DIRS
 from ..models import LogFileInput
 from ..utils import check_character_limit, format_bytes, format_timestamp, handle_error
 
@@ -97,7 +97,40 @@ def register_log_reader(mcp):
                 return "\n".join(lines)
 
             # Validate file path
-            log_file = Path(params.file_path)
+            try:
+                # Use strict=False to allow resolving non-existent paths (for later existence check)
+                log_file = Path(params.file_path).resolve(strict=False)
+            except Exception:
+                 # Fallback for weird paths or permission issues during resolution
+                 log_file = Path(params.file_path).absolute()
+
+            # Security Check: Ensure file is within allowed directories
+            is_allowed = False
+
+            # Check if it matches exactly a common log path
+            for common_path in COMMON_LOG_PATHS:
+                try:
+                    if log_file == Path(common_path).resolve():
+                        is_allowed = True
+                        break
+                except (OSError, ValueError):
+                    continue
+
+            # Check if it is inside an allowed directory
+            if not is_allowed:
+                for allowed_dir in ALLOWED_LOG_DIRS:
+                    try:
+                        # Check if log_file is relative to allowed_dir
+                        # resolve() is important to handle symlinks and .. traversal
+                        if log_file.is_relative_to(Path(allowed_dir).resolve()):
+                            is_allowed = True
+                            break
+                    except (ValueError, OSError):
+                        continue
+
+            if not is_allowed:
+                 return f"Error: Security violation. Access to {params.file_path} is not allowed. Only logs in designated directories (e.g., /var/log) can be read."
+
             if not log_file.exists():
                 return f"Error: Log file not found: {params.file_path}"
 
