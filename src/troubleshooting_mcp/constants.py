@@ -41,3 +41,12 @@ COMMON_LOG_PATHS = [
     "C:/Windows/System32/winevt/Logs/System.evtx",
     "C:/Windows/System32/winevt/Logs/Application.evtx",
 ]
+
+# Allowed directories for log reading (security restriction)
+ALLOWED_LOG_DIRS = [
+    "/var/log",
+    "/var/adm",
+    "/var/eventlog",
+    "/usr/local/var/log",
+    "C:/Windows/System32/winevt/Logs",
+]
