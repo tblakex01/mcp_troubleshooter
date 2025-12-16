@@ -3,7 +3,7 @@ Extended tests for diagnostic tools to achieve 90%+ coverage.
 """
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
 
 from troubleshooting_mcp.models import (
@@ -103,7 +103,10 @@ class TestLogReaderExtended:
 
         func = tool_funcs[0]
         params = LogFileInput(file_path=str(log_file))
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS to include the temp directory
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
 
@@ -166,7 +169,10 @@ class TestLogReaderExtended:
         params = LogFileInput(
             file_path=str(log_file),
         )
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS to include the temp directory
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "Log File" in result or "Line" in result

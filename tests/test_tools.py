@@ -192,7 +192,10 @@ class TestLogReaderTool:
 
         func = tool_funcs[0]
         params = LogFileInput(file_path=str(log_file), lines=10)
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS to include the temp directory
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "INFO Application started" in result or "Application started" in result
@@ -223,7 +226,10 @@ class TestLogReaderTool:
 
         func = tool_funcs[0]
         params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS to include the temp directory
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "ERROR" in result
