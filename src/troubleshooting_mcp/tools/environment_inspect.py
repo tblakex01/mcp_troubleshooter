@@ -58,11 +58,32 @@ def register_environment_inspect(mcp):
         try:
             # Get environment variables
             env_vars = {}
+            # Sensitive keywords to mask
+            SENSITIVE_KEYWORDS = {
+                "KEY",
+                "SECRET",
+                "PASSWORD",
+                "TOKEN",
+                "AUTH",
+                "CREDENTIAL",
+                "PRIVATE",
+                "CERTIFICATE",
+                "SIGNATURE",
+            }
+
             for key, value in os.environ.items():
                 if params.pattern:
                     if params.pattern.lower() not in key.lower():
                         continue
-                env_vars[key] = value
+
+                # Mask sensitive values
+                is_sensitive = any(
+                    keyword in key.upper() for keyword in SENSITIVE_KEYWORDS
+                )
+                if is_sensitive:
+                    env_vars[key] = "******** (masked for security)"
+                else:
+                    env_vars[key] = value
 
             # Check for common development tools
             dev_tools = {}
