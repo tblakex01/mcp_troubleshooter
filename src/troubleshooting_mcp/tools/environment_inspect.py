@@ -9,6 +9,7 @@ import subprocess
 
 from ..models import EnvironmentSearchInput, ResponseFormat
 from ..utils import check_character_limit, handle_error
+from ..constants import SENSITIVE_ENV_PATTERNS
 
 
 def register_environment_inspect(mcp):
@@ -62,7 +63,13 @@ def register_environment_inspect(mcp):
                 if params.pattern:
                     if params.pattern.lower() not in key.lower():
                         continue
-                env_vars[key] = value
+
+                # Security Check: Mask sensitive values
+                is_sensitive = any(pattern in key.upper() for pattern in SENSITIVE_ENV_PATTERNS)
+                if is_sensitive:
+                    env_vars[key] = "******** (masked for security)"
+                else:
+                    env_vars[key] = value
 
             # Check for common development tools
             dev_tools = {}
@@ -110,7 +117,7 @@ def register_environment_inspect(mcp):
                     # Sort for consistent output
                     for key in sorted(env_vars.keys()):
                         value = env_vars[key]
-                        # Truncate very long values
+                        # Truncate very long values (if not already masked)
                         if len(value) > 200:
                             value = value[:200] + "... (truncated)"
                         lines.append(f"**{key}:**")
