@@ -50,3 +50,15 @@ ALLOWED_LOG_DIRS = [
     "/usr/local/var/log",
     "C:/Windows/System32/winevt/Logs",
 ]
+
+# Patterns for sensitive environment variables to mask (Regex)
+SENSITIVE_ENV_PATTERNS = [
+    r".*PASSWORD.*",
+    r".*SECRET.*",
+    r".*CREDENTIAL.*",
+    r"(?:^|_)KEY$",
+    r"(?:^|_)TOKEN$",
+    r"(?:^|_)AUTH$",
+    r"(?:^|_)CERT$",
+    r"(?:^|_)PRIVATE$",
+]
