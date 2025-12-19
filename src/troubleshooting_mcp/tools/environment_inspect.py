@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 
+from ..constants import SENSITIVE_ENV_PATTERNS
 from ..models import EnvironmentSearchInput, ResponseFormat
 from ..utils import check_character_limit, handle_error
 
@@ -62,7 +63,18 @@ def register_environment_inspect(mcp):
                 if params.pattern:
                     if params.pattern.lower() not in key.lower():
                         continue
-                env_vars[key] = value
+
+                # Mask sensitive environment variables
+                is_sensitive = False
+                for pattern in SENSITIVE_ENV_PATTERNS:
+                    if pattern.lower() in key.lower():
+                        is_sensitive = True
+                        break
+
+                if is_sensitive:
+                    env_vars[key] = "******** [MASKED FOR SECURITY] ********"
+                else:
+                    env_vars[key] = value
 
             # Check for common development tools
             dev_tools = {}
