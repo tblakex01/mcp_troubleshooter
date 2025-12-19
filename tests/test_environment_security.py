@@ -26,8 +26,14 @@ class TestEnvironmentSecurity(unittest.TestCase):
         "MY_SECRET_PASSWORD": "secret_password",
         "API_KEY": "123456789",
         "AWS_SECRET_ACCESS_KEY": "aws_secret",
+        "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE", # Should NOT be masked (matches KEY but not KEY$) -> wait, regex is (?:^|_)KEY$ matches KEY_ID? No.
         "AUTH_TOKEN": "auth_token_value",
-        "DB_CREDENTIALS": "db_password"
+        "DB_CREDENTIALS": "db_password",
+        "MONKEY_KEY": "banana_key", # Should be masked (ends in KEY)
+        "AUTH_METHOD": "Basic", # Should NOT be masked (starts with AUTH but not AUTH$)
+        "SSH_PRIVATE_KEY": "private_key_content",
+        "MY_CERT": "cert_content",
+        "KEYBOARD_LAYOUT": "US" # Should NOT be masked
     })
     def test_environment_masking(self):
         # We need to run the async function
@@ -40,26 +46,31 @@ class TestEnvironmentSecurity(unittest.TestCase):
 
         result = asyncio.run(run_test())
 
-        # Check that non-sensitive values are present
-        self.assertIn("MY_PUBLIC_VAR", result)
-        self.assertIn("public_value", result)
+        # Helper to check masking
+        def assert_masked(key, original_value):
+            self.assertIn(key, result, f"Key {key} missing from output")
+            self.assertNotIn(original_value, result, f"Value for {key} was NOT masked!")
+            self.assertIn("******** (masked)", result, f"Masked placeholder missing for {key}")
 
-        # Check that sensitive keys are present but values are masked
-        self.assertIn("MY_SECRET_PASSWORD", result)
-        self.assertNotIn("secret_password", result)
-        self.assertIn("******** (masked)", result)
+        def assert_not_masked(key, original_value):
+            self.assertIn(key, result, f"Key {key} missing from output")
+            self.assertIn(original_value, result, f"Value for {key} WAS masked incorrectly!")
 
-        self.assertIn("API_KEY", result)
-        self.assertNotIn("123456789", result)
+        # --- Check Masked Items ---
+        assert_masked("MY_SECRET_PASSWORD", "secret_password")
+        assert_masked("API_KEY", "123456789")
+        assert_masked("AWS_SECRET_ACCESS_KEY", "aws_secret")
+        assert_masked("AUTH_TOKEN", "auth_token_value")
+        assert_masked("DB_CREDENTIALS", "db_password")
+        assert_masked("MONKEY_KEY", "banana_key")
+        assert_masked("SSH_PRIVATE_KEY", "private_key_content")
+        assert_masked("MY_CERT", "cert_content")
 
-        self.assertIn("AWS_SECRET_ACCESS_KEY", result)
-        self.assertNotIn("aws_secret", result)
-
-        self.assertIn("AUTH_TOKEN", result)
-        self.assertNotIn("auth_token_value", result)
-
-        self.assertIn("DB_CREDENTIALS", result)
-        self.assertNotIn("db_password", result)
+        # --- Check Non-Masked Items ---
+        assert_not_masked("MY_PUBLIC_VAR", "public_value")
+        assert_not_masked("AUTH_METHOD", "Basic")
+        assert_not_masked("KEYBOARD_LAYOUT", "US")
+        assert_not_masked("AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE")
 
 if __name__ == "__main__":
     unittest.main()

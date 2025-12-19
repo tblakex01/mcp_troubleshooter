@@ -4,6 +4,7 @@ Environment Inspection Tool - Inspect environment variables and development tool
 
 import json
 import os
+import re
 import shutil
 import subprocess
 
@@ -67,7 +68,7 @@ def register_environment_inspect(mcp):
                 # Mask sensitive variables
                 is_sensitive = False
                 for pattern in SENSITIVE_ENV_PATTERNS:
-                    if pattern in key.upper():
+                    if re.search(pattern, key, re.IGNORECASE):
                         is_sensitive = True
                         break
 
