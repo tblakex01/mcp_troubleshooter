@@ -36,8 +36,6 @@ def test_dependencies():
         except (ImportError, ModuleNotFoundError) as e:
             pytest.fail(f"{package} (not installed): {str(e)}")
 
-    return True
-
 def test_server_imports():
     """Verify the server file can be imported"""
     print("\nTesting server imports...", end=" ")
@@ -49,7 +47,6 @@ def test_server_imports():
         assert hasattr(server, 'mcp'), "Server module missing 'mcp' attribute"
         assert hasattr(server, 'main'), "Server module missing 'main' function"
         print("✓")
-        return True
     except (ImportError, ModuleNotFoundError) as e:
         pytest.fail(f"Failed to import server module: {str(e)}")
     except AssertionError as e:
