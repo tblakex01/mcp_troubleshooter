@@ -68,6 +68,33 @@ def register_safe_command(mcp):
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
 
+            # Security Check: Validate arguments for sensitive commands
+            # We want to prevent state-changing operations like 'ip link set' or 'ifconfig down'
+            cmd = params.command.lower()
+            args_lower = [arg.lower() for arg in params.args]
+
+            if cmd == "ip":
+                # Check for state-modifying keywords
+                modification_keywords = {
+                    "add", "del", "delete", "set", "change", "replace", "flush"
+                }
+
+                for arg in args_lower:
+                    if arg in modification_keywords:
+                         return f"Error: Security violation. Argument '{arg}' is not allowed for command 'ip' to prevent system modifications."
+
+            elif cmd == "ifconfig":
+                # For ifconfig, block dangerous flags/actions
+                forbidden_ifconfig_args = {
+                    "up", "down", "add", "del", "metric", "mtu",
+                    "netmask", "broadcast", "pointopoint", "arp",
+                    "promisc", "allmulti"
+                }
+
+                for arg in args_lower:
+                    if arg.lstrip("-") in forbidden_ifconfig_args or arg in forbidden_ifconfig_args:
+                        return f"Error: Security violation. Argument '{arg}' is not allowed for command 'ifconfig'."
+
             # Prepare command with arguments
             cmd_list = [command_path] + params.args
 
