@@ -9,6 +9,61 @@ from ..models import SafeCommandInput
 from ..utils import check_character_limit, handle_error
 
 
+def validate_safe_args(command: str, args: list[str]) -> str | None:
+    """
+    Validate arguments for sensitive commands to prevent state modification.
+    Returns None if safe, or an error message string if unsafe.
+    """
+    cmd = command.lower()
+    if not args:
+        return None
+
+    args_lower = [a.lower() for a in args]
+
+    if cmd == "ip":
+        # Block state modification subcommands/verbs and batch mode
+        blocked_verbs = {
+            "add",
+            "del",
+            "delete",
+            "set",
+            "change",
+            "replace",
+            "flush",
+            "save",
+            "restore",
+            "create",
+            "-b",
+            "-batch",
+        }
+        for arg in args_lower:
+            if arg in blocked_verbs:
+                return f"Error: Argument '{arg}' is not allowed for command 'ip' (read-only mode)"
+
+    elif cmd == "ifconfig":
+        # Block state modification flags/arguments
+        blocked_args = {
+            "up",
+            "down",
+            "add",
+            "del",
+            "delete",
+            "create",
+            "metric",
+            "mtu",
+            "netmask",
+            "broadcast",
+            "pointopoint",
+            "hw",
+            "plumb",
+        }
+        for arg in args_lower:
+            if arg in blocked_args:
+                return f"Error: Argument '{arg}' is not allowed for command 'ifconfig' (read-only mode)"
+
+    return None
+
+
 def register_safe_command(mcp):
     """Register the safe command execution tool with the MCP server."""
 
@@ -67,6 +122,11 @@ def register_safe_command(mcp):
             command_path = shutil.which(params.command)
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
+
+            # Security Check: Validate arguments for sensitive commands
+            validation_error = validate_safe_args(params.command, params.args)
+            if validation_error:
+                return validation_error
 
             # Prepare command with arguments
             cmd_list = [command_path] + params.args
