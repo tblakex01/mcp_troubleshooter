@@ -53,3 +53,23 @@ def sample_log_content():
 2025-01-05 10:00:03 WARNING Retrying connection
 2025-01-05 10:00:04 INFO Application started successfully
 """
+
+@pytest.fixture(autouse=True)
+def mock_allowed_log_dirs(monkeypatch, tmp_path):
+    """
+    Mock ALLOWED_LOG_DIRS to include the temporary directory used by tests.
+    This ensures that LogReaderTool tests pass in the restricted environment.
+    """
+    # Patch the constants module
+    from troubleshooting_mcp import constants
+    original_dirs = constants.ALLOWED_LOG_DIRS
+    new_dirs = original_dirs + [str(tmp_path), "/tmp"]
+    monkeypatch.setattr(constants, "ALLOWED_LOG_DIRS", new_dirs)
+
+    # Also patch the log_reader module where it's imported
+    # We need to try/except because it might not be imported yet
+    try:
+        from troubleshooting_mcp.tools import log_reader
+        monkeypatch.setattr(log_reader, "ALLOWED_LOG_DIRS", new_dirs)
+    except ImportError:
+        pass
