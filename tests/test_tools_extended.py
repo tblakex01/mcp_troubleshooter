@@ -3,7 +3,7 @@ Extended tests for diagnostic tools to achieve 90%+ coverage.
 """
 
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import pytest
 
 from troubleshooting_mcp.models import (
@@ -146,6 +146,7 @@ class TestLogReaderExtended:
     async def test_log_reader_markdown_format(self, tmp_path):
         """Test log reader with Markdown format."""
         from troubleshooting_mcp.tools import log_reader
+        from troubleshooting_mcp import constants
 
         log_file = tmp_path / "test.log"
         log_file.write_text("Line 1\nLine 2\nLine 3\n")
@@ -160,13 +161,16 @@ class TestLogReaderExtended:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(
-            file_path=str(log_file),
-        )
-        result = await func(params)
+        # Patch ALLOWED_LOG_DIRS in log_reader module
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', constants.ALLOWED_LOG_DIRS + [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
+
+            func = tool_funcs[0]
+            params = LogFileInput(
+                file_path=str(log_file),
+            )
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "Log File" in result or "Line" in result

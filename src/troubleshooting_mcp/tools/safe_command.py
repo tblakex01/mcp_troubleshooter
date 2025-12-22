@@ -9,6 +9,69 @@ from ..models import SafeCommandInput
 from ..utils import check_character_limit, handle_error
 
 
+def validate_safe_args(command: str, args: list[str]) -> str | None:
+    """Validate arguments for specific commands to prevent security risks.
+
+    Args:
+        command: The command being executed
+        args: List of arguments
+
+    Returns:
+        Error message if validation fails, None if safe
+    """
+    if not args:
+        return None
+
+    cmd = command.lower()
+
+    if cmd == "ip":
+        # Block network modification subcommands
+        # ip link set, ip addr add, ip route del, etc.
+        dangerous_keywords = {
+            "set",
+            "add",
+            "del",
+            "delete",
+            "change",
+            "replace",
+            "flush",
+            "exec",
+            "tap",
+            "tun",
+            "netns",
+        }
+        for arg in args:
+            if arg.lower() in dangerous_keywords:
+                return f"Error: Security violation. Argument '{arg}' is not allowed for 'ip' command."
+
+    elif cmd == "ifconfig":
+        # Block modification keywords
+        dangerous_keywords = {
+            "up",
+            "down",
+            "add",
+            "del",
+            "metric",
+            "mtu",
+            "netmask",
+            "broadcast",
+            "pointopoint",
+            "arp",
+            "promisc",
+        }
+        for arg in args:
+            if arg.lower() in dangerous_keywords:
+                return f"Error: Security violation. Argument '{arg}' is not allowed for 'ifconfig' command."
+
+    elif cmd == "hostname":
+        # hostname with args usually sets the hostname unless it's a flag
+        for arg in args:
+            if not arg.startswith("-"):
+                return "Error: Security violation. Setting hostname is not allowed."
+
+    return None
+
+
 def register_safe_command(mcp):
     """Register the safe command execution tool with the MCP server."""
 
@@ -67,6 +130,11 @@ def register_safe_command(mcp):
             command_path = shutil.which(params.command)
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
+
+            # Security check: Validate arguments
+            security_error = validate_safe_args(params.command, params.args)
+            if security_error:
+                return security_error
 
             # Prepare command with arguments
             cmd_list = [command_path] + params.args
