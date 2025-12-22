@@ -168,6 +168,7 @@ class TestLogReaderTool:
     async def test_log_reader_with_temp_file(self, tmp_path):
         """Test log reader with a temporary log file."""
         from troubleshooting_mcp.tools import log_reader
+        from troubleshooting_mcp import constants
 
         # Create a temporary log file
         log_file = tmp_path / "test.log"
@@ -188,11 +189,14 @@ class TestLogReaderTool:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), lines=10)
-        result = await func(params)
+        # Patch ALLOWED_LOG_DIRS in log_reader module
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', constants.ALLOWED_LOG_DIRS + [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
+
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), lines=10)
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "INFO Application started" in result or "Application started" in result
@@ -201,6 +205,7 @@ class TestLogReaderTool:
     async def test_log_reader_with_pattern(self, tmp_path):
         """Test log reader with search pattern."""
         from troubleshooting_mcp.tools import log_reader
+        from troubleshooting_mcp import constants
 
         log_file = tmp_path / "test.log"
         log_content = """2025-01-01 10:00:00 INFO Application started
@@ -219,11 +224,14 @@ class TestLogReaderTool:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
-        result = await func(params)
+        # Patch ALLOWED_LOG_DIRS in log_reader module
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', constants.ALLOWED_LOG_DIRS + [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
+
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "ERROR" in result
