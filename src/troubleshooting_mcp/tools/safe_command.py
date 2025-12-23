@@ -68,6 +68,14 @@ def register_safe_command(mcp):
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
 
+            # Security Check: Validate arguments for specific commands
+            # Some commands (like 'ip') have subcommands that can execute arbitrary code
+            # or modify system state in dangerous ways.
+            if params.command == "ip":
+                for arg in params.args:
+                    if arg in ["netns", "exec", "-b", "-batch"]:
+                        return f"Error: Security violation. The argument '{arg}' is not allowed for command 'ip'."
+
             # Prepare command with arguments
             cmd_list = [command_path] + params.args
 
