@@ -237,18 +237,16 @@ class TestAdditionalCoverageSafeCommand:
 
         func = tool_funcs[0]
 
-        # Test JSON format
+        # Test with whoami command
         params_json = SafeCommandInput(
-            command="whoami",
-            response_format=ResponseFormat.JSON
+            command="whoami"
         )
         result_json = await func(params_json)
         assert isinstance(result_json, str)
 
-        # Test Markdown format
+        # Test with hostname command
         params_md = SafeCommandInput(
-            command="hostname",
-            response_format=ResponseFormat.MARKDOWN
+            command="hostname"
         )
         result_md = await func(params_md)
         assert isinstance(result_md, str)
