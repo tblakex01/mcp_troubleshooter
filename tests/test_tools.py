@@ -178,24 +178,26 @@ class TestLogReaderTool:
 2025-01-01 10:00:04 INFO Success"""
         log_file.write_text(log_content)
 
-        mcp = MagicMock()
-        tool_funcs = []
+        # Patch ALLOWED_LOG_DIRS to include the temp path
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            mcp = MagicMock()
+            tool_funcs = []
 
-        def mock_tool(*args, **kwargs):
-            def decorator(func):
-                tool_funcs.append(func)
-                return func
-            return decorator
+            def mock_tool(*args, **kwargs):
+                def decorator(func):
+                    tool_funcs.append(func)
+                    return func
+                return decorator
 
-        mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
+            mcp.tool = mock_tool
+            log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), lines=10)
-        result = await func(params)
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), lines=10)
+            result = await func(params)
 
-        assert isinstance(result, str)
-        assert "INFO Application started" in result or "Application started" in result
+            assert isinstance(result, str)
+            assert "INFO Application started" in result or "Application started" in result
 
     @pytest.mark.asyncio
     async def test_log_reader_with_pattern(self, tmp_path):
@@ -209,24 +211,26 @@ class TestLogReaderTool:
 2025-01-01 10:00:03 INFO Success"""
         log_file.write_text(log_content)
 
-        mcp = MagicMock()
-        tool_funcs = []
+        # Patch ALLOWED_LOG_DIRS to include the temp path
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            mcp = MagicMock()
+            tool_funcs = []
 
-        def mock_tool(*args, **kwargs):
-            def decorator(func):
-                tool_funcs.append(func)
-                return func
-            return decorator
+            def mock_tool(*args, **kwargs):
+                def decorator(func):
+                    tool_funcs.append(func)
+                    return func
+                return decorator
 
-        mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
+            mcp.tool = mock_tool
+            log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
-        result = await func(params)
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
+            result = await func(params)
 
-        assert isinstance(result, str)
-        assert "ERROR" in result
+            assert isinstance(result, str)
+            assert "ERROR" in result
 
     @pytest.mark.asyncio
     async def test_log_reader_file_not_found(self):
