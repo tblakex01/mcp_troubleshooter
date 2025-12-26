@@ -4,7 +4,7 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .constants import SAFE_COMMANDS
 
@@ -159,3 +159,27 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @model_validator(mode='after')
+    def validate_security(self) -> 'SafeCommandInput':
+        command = self.command
+        args = self.args or []
+
+        # Security checks for specific commands
+        if command == 'ip':
+            # Prevent batch mode and network namespace execution
+            for arg in args:
+                if arg.startswith(('-b', '-batch')):
+                     raise ValueError(f"Batch mode is not allowed for ip command")
+                if arg.startswith(('-n', '-netns')):
+                     raise ValueError(f"Network namespaces are not allowed for ip command")
+                if arg == 'netns':
+                     raise ValueError("The 'netns' object is not allowed for ip command")
+
+        elif command == 'dig':
+            # Prevent batch mode (file reading)
+            for arg in args:
+                if arg.startswith('-f'):
+                     raise ValueError("The '-f' flag is not allowed for dig command")
+
+        return self
