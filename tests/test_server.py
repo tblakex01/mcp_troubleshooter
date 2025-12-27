@@ -32,24 +32,18 @@ def test_dependencies():
     for package, import_name in dependencies.items():
         try:
             __import__(import_name)
-            print(f"  ✓ {package}")
         except (ImportError, ModuleNotFoundError) as e:
             pytest.fail(f"{package} (not installed): {str(e)}")
 
-    return True
-
 def test_server_imports():
     """Verify the server file can be imported"""
-    print("\nTesting server imports...", end=" ")
-    # Add current directory to path
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    # Add src directory to path
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
     try:
         from troubleshooting_mcp import server
         assert hasattr(server, 'mcp'), "Server module missing 'mcp' attribute"
         assert hasattr(server, 'main'), "Server module missing 'main' function"
-        print("✓")
-        return True
     except (ImportError, ModuleNotFoundError) as e:
         pytest.fail(f"Failed to import server module: {str(e)}")
     except AssertionError as e:
@@ -78,7 +72,6 @@ def test_psutil_functionality():
 def test_pydantic_models():
     """Verify Pydantic models work correctly"""
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
-    import pytest
 
     class TestModel(BaseModel):
         model_config = ConfigDict(
@@ -104,55 +97,3 @@ def test_command_availability():
 
     # At least some commands should be available on most systems
     assert len(available) > 0, "No diagnostic commands found on system"
-
-def print_summary(results):
-    """Print test summary"""
-    print("\n" + "="*50)
-    print("TEST SUMMARY")
-    print("="*50)
-
-    passed = sum(results.values())
-    total = len(results)
-
-    for test_name, passed_test in results.items():
-        status = "✓ PASS" if passed_test else "✗ FAIL"
-        print(f"{status}: {test_name}")
-
-    print("="*50)
-    print(f"Results: {passed}/{total} tests passed")
-
-    if passed == total:
-        print("\n✓ All tests passed! Server is ready to use.")
-        print("\nNext steps:")
-        print("1. Review QUICKSTART.md for configuration instructions")
-        print("2. Add server to Claude Desktop config")
-        print("3. Restart Claude Desktop")
-        return True
-    else:
-        print("\n✗ Some tests failed. Please resolve issues before proceeding.")
-        print("\nTo fix issues:")
-        print("1. Install missing dependencies: pip install -r requirements.txt")
-        print("2. Verify Python version is 3.10 or higher")
-        print("3. Check that troubleshooting_mcp.py is in the current directory")
-        return False
-
-def main():
-    """Run all tests"""
-    print("="*50)
-    print("TROUBLESHOOTING MCP SERVER - TEST SUITE")
-    print("="*50)
-
-    results = {
-        "Python Version": test_python_version(),
-        "Dependencies": test_dependencies(),
-        "Server Imports": test_server_imports(),
-        "psutil Functionality": test_psutil_functionality(),
-        "Pydantic Validation": test_pydantic_models(),
-        "Command Availability": test_command_availability()
-    }
-
-    success = print_summary(results)
-    sys.exit(0 if success else 1)
-
-if __name__ == "__main__":
-    main()
