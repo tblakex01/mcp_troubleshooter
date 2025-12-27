@@ -145,6 +145,27 @@ class SafeCommandInput(BaseModel):
         description="Command arguments (e.g., ['-a', '-l'] for 'ls -a -l')",
         max_items=20,
     )
+
+    @field_validator("args")
+    @classmethod
+    def validate_args(cls, v: list[str] | None) -> list[str] | None:
+        if not v:
+            return v
+
+        # Security: Only allow safe characters in arguments
+        # Alphanumeric, dash, underscore, dot, slash, colon, at-sign
+        import re
+        safe_pattern = re.compile(r"^[a-zA-Z0-9\-_./:@]+$")
+
+        for arg in v:
+            if not safe_pattern.match(arg):
+                raise ValueError(
+                    f"Invalid argument: '{arg}'. "
+                    "Arguments must only contain alphanumeric characters, "
+                    "dashes, underscores, dots, slashes, colons, and at-signs."
+                )
+        return v
+
     timeout: int | None = Field(
         default=30, description="Command timeout in seconds (default: 30)", ge=1, le=300
     )
