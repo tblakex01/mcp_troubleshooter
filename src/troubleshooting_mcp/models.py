@@ -4,7 +4,7 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, ValidationInfo
 
 from .constants import SAFE_COMMANDS
 
@@ -159,3 +159,33 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @field_validator("args")
+    @classmethod
+    def validate_args(cls, v: list[str], info: ValidationInfo) -> list[str]:
+        if not v:
+            return v
+
+        values = info.data
+        command = values.get("command")
+
+        # Check for dangerous characters in all arguments
+        # These characters are often used for shell injection or chaining
+        forbidden_chars = [";", "&", "|", "`", "$", "(", ")", ">", "<", "{", "}", "!"]
+        for arg in v:
+            for char in forbidden_chars:
+                if char in arg:
+                    raise ValueError(f"Argument contains forbidden character '{char}': {arg}")
+
+        # Command-specific security validation
+        if command == "ip":
+            # Block 'netns' which allows executing commands in namespaces
+            # Block 'exec' which is the subcommand for execution
+            forbidden_args = ["netns", "exec"]
+            for arg in v:
+                if arg in forbidden_args:
+                    raise ValueError(
+                        f"Argument '{arg}' is not allowed for command 'ip' for security reasons"
+                    )
+
+        return v
