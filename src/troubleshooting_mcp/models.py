@@ -4,7 +4,7 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .constants import SAFE_COMMANDS
 
@@ -159,3 +159,45 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @model_validator(mode="after")
+    def validate_safe_args(self) -> "SafeCommandInput":
+        """Validate arguments for specific commands to prevent security risks."""
+        command = self.command
+        args = self.args or []
+
+        # Convert args to lowercase for checking
+        lower_args = [arg.lower() for arg in args]
+
+        if command == "ip":
+            # Prevent 'ip netns' (command injection) and destructive operations
+            if "netns" in lower_args:
+                raise ValueError("Argument 'netns' is not allowed for command 'ip'")
+
+            # Check for other dangerous/destructive ip subcommands/args
+            # 'link set' can modify interfaces
+            # 'addr add/del/flush' can modify addresses
+            # 'route add/del' can modify routing
+
+            # Simple keyword blocking for destructive intents
+            # 'exec' is used with netns, but also potentially other contexts
+            if "exec" in lower_args:
+                raise ValueError("Argument 'exec' is not allowed for command 'ip'")
+
+            # 'link' is allowed (for show), but 'set' makes it destructive
+            if "link" in lower_args and "set" in lower_args:
+                raise ValueError("Operation 'link set' is not allowed for command 'ip'")
+
+            # 'addr' is allowed (for show), but 'add', 'del', 'flush' are destructive
+            # 'delete' is alias for 'del'
+            destructive_actions = {"add", "del", "delete", "flush", "replace", "change"}
+            if "addr" in lower_args or "address" in lower_args or "a" in lower_args:
+                if any(action in lower_args for action in destructive_actions):
+                    raise ValueError("Destructive address operations are not allowed")
+
+        elif command == "ifconfig":
+            # 'down' and 'up' are destructive/state-changing
+            if "down" in lower_args or "up" in lower_args:
+                raise ValueError("State changing arguments 'up'/'down' are not allowed for ifconfig")
+
+        return self
