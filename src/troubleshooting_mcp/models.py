@@ -4,7 +4,7 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .constants import SAFE_COMMANDS
 
@@ -159,3 +159,65 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @model_validator(mode="after")
+    def validate_security_args(self) -> "SafeCommandInput":
+        """Validate command arguments for security vulnerabilities."""
+        cmd = self.command
+        args = self.args or []
+
+        # Enforce whitelist for ip command (RCE prevention)
+        if cmd == "ip":
+            # Allowed objects/subcommands for ip
+            # addr, address, a
+            # route, r
+            # link, l
+            # neighbor, neigh, n
+            # maddress, maddr, m
+            ALLOWED_IP_OBJECTS = {
+                "addr",
+                "address",
+                "a",
+                "route",
+                "r",
+                "link",
+                "l",
+                "neighbor",
+                "neigh",
+                "n",
+                "maddress",
+                "maddr",
+                "m",
+            }
+
+            # Allow flags that don't start with -b (batch) and are generally safe?
+            # Actually, we should check the first non-flag argument.
+            # But arguments can be anywhere.
+            # Strategy:
+            # 1. Block known dangerous flags anywhere (-b, -batch, -force, etc if needed)
+            # 2. Ensure at least one allowed object is present, OR if no object, it's just 'ip' (which prints help)
+            # 3. Reject unknown objects.
+
+            # Simplified Strategy:
+            # Iterate over args. If arg is not a flag (starts with -), it MUST be in ALLOWED_IP_OBJECTS (or be a parameter to an object, which is hard to distinguish without full parsing).
+            # But `ip netns exec` -> `netns` is the object.
+            # `ip addr show` -> `addr` is the object.
+
+            # So, the FIRST non-flag argument MUST be in ALLOWED_IP_OBJECTS.
+
+            has_object = False
+            for i, arg in enumerate(args):
+                if arg.startswith("-"):
+                    # Check for dangerous flags
+                    # ip -batch / -b executes commands from file
+                    if arg.lower().startswith("-b"):
+                         raise ValueError(f"Argument '{arg}' is not allowed for ip command")
+                else:
+                    # This is the first object
+                    if not has_object:
+                        if arg.lower() not in ALLOWED_IP_OBJECTS:
+                             raise ValueError(f"Object '{arg}' is not allowed for ip command. Allowed: {', '.join(sorted(ALLOWED_IP_OBJECTS))}")
+                        has_object = True
+                    # Subsequent args are subcommands/params for the object (e.g. 'show', 'dev', 'eth0'), which we implicitly trust if the object is safe.
+
+        return self
