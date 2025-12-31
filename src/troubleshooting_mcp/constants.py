@@ -62,3 +62,8 @@ SENSITIVE_ENV_PATTERNS = [
     r"(?:^|_)CERT$",
     r"(?:^|_)PRIVATE$",
 ]
+
+# Patterns for sensitive command-line arguments to mask (Regex)
+SENSITIVE_CLI_PATTERNS = [
+    r"(?i)(password|passwd|pwd|secret|key|token|auth|credential)[=:\s]*['\"]?([^\s'\"]+)",
+]

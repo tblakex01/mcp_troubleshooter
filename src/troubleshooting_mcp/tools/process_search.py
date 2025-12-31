@@ -3,11 +3,39 @@ Process Search Tool - Search for running processes.
 """
 
 import json
+import re
 
 import psutil
 
+from ..constants import SENSITIVE_CLI_PATTERNS
 from ..models import ProcessSearchInput, ResponseFormat
 from ..utils import check_character_limit, format_bytes, handle_error
+
+
+def _mask_cmdline(cmdline: list[str]) -> str:
+    """Mask sensitive information in command line arguments."""
+    if not cmdline:
+        return ""
+
+    full_cmd = " ".join(cmdline)
+
+    for pattern in SENSITIVE_CLI_PATTERNS:
+        # Use a function for replacement to keep the matched key but mask the value
+        def replace_sensitive(match):
+            # If the pattern has groups, we assume the last group is the value to mask
+            if match.groups():
+                full_match = match.group(0)
+                # Find the value part (last group) in the match
+                value = match.group(match.lastindex)
+                if not value:
+                    return full_match
+                # Replace the value part with masked version
+                return full_match.replace(value, "*" * 8)
+            return match.group(0)
+
+        full_cmd = re.sub(pattern, replace_sensitive, full_cmd)
+
+    return full_cmd
 
 
 def register_process_search(mcp):
@@ -87,6 +115,9 @@ def register_process_search(mcp):
                     # Get memory in bytes
                     mem_bytes = pinfo["memory_info"].rss if pinfo["memory_info"] else 0
 
+                    # Mask sensitive info in cmdline
+                    cmdline_display = _mask_cmdline(pinfo["cmdline"])
+
                     processes.append(
                         {
                             "pid": pinfo["pid"],
@@ -95,11 +126,7 @@ def register_process_search(mcp):
                             "memory_bytes": mem_bytes,
                             "memory_formatted": format_bytes(mem_bytes),
                             "status": pinfo["status"],
-                            "cmdline": (
-                                " ".join(pinfo["cmdline"][:3])
-                                if pinfo["cmdline"]
-                                else pinfo["name"]
-                            ),
+                            "cmdline": cmdline_display or pinfo["name"],
                         }
                     )
 
