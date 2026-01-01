@@ -68,8 +68,23 @@ def register_safe_command(mcp):
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
 
+            # Security: Validate arguments for specific commands to prevent abuse
+            current_args = params.args or []
+
+            # 1. 'ip' command: Block 'netns' (RCE risk) and batch mode
+            if params.command == "ip":
+                for arg in current_args:
+                    if arg.lower() in ["netns", "netn", "net", "ne", "-batch", "-b"]:
+                        return f"Error: Argument '{arg}' is not allowed for ip command (security restriction)"
+
+            # 2. 'dig' command: Block batch mode (file read risk)
+            if params.command == "dig":
+                for arg in current_args:
+                    if arg.lower() == "-f":
+                        return f"Error: Argument '{arg}' is not allowed for dig command (security restriction)"
+
             # Prepare command with arguments
-            cmd_list = [command_path] + params.args
+            cmd_list = [command_path] + current_args
 
             # Execute command with timeout
             try:
