@@ -8,6 +8,13 @@ import subprocess
 from ..models import SafeCommandInput
 from ..utils import check_character_limit, handle_error
 
+# Security blocklist for command arguments
+# Prevents arbitrary file reads (e.g., dig -f) and command execution (e.g., ip netns exec)
+ARGUMENT_BLOCKLIST = {
+    "dig": ["-f", "-k"],  # -f (batch mode), -k (key file) read files
+    "ip": ["netns", "-b", "-batch"],  # netns (exec), -b (batch) reads file
+}
+
 
 def register_safe_command(mcp):
     """Register the safe command execution tool with the MCP server."""
@@ -61,12 +68,22 @@ def register_safe_command(mcp):
             - Only whitelisted commands can be executed
             - All commands run with timeout protection
             - Commands run with current user permissions (not elevated)
+            - Dangerous arguments (e.g., -f for dig) are blocked
         """
         try:
             # Check if command exists on system
             command_path = shutil.which(params.command)
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
+
+            # Security Check: Validate arguments against blocklist
+            if params.command in ARGUMENT_BLOCKLIST:
+                blocked_args = ARGUMENT_BLOCKLIST[params.command]
+                for arg in params.args:
+                    for blocked in blocked_args:
+                        # Check exact match or startswith for flags like -f/etc/passwd
+                        if arg == blocked or (blocked.startswith("-") and arg.startswith(blocked)):
+                            return f"Error: Security violation. Argument '{arg}' is not allowed for command '{params.command}'"
 
             # Prepare command with arguments
             cmd_list = [command_path] + params.args

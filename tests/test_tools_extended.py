@@ -84,6 +84,7 @@ class TestLogReaderExtended:
     async def test_log_reader_common_log_paths(self, tmp_path):
         """Test log reader with common log paths."""
         from troubleshooting_mcp.tools import log_reader
+        from unittest.mock import patch
 
         # Create temp log
         log_file = tmp_path / "syslog"
@@ -103,7 +104,10 @@ class TestLogReaderExtended:
 
         func = tool_funcs[0]
         params = LogFileInput(file_path=str(log_file))
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
 
@@ -111,6 +115,7 @@ class TestLogReaderExtended:
     async def test_log_reader_json_format(self, tmp_path):
         """Test log reader with JSON format."""
         from troubleshooting_mcp.tools import log_reader
+        from unittest.mock import patch
 
         log_file = tmp_path / "test.log"
         log_file.write_text("Line 1\nLine 2\nLine 3\n")
@@ -132,7 +137,10 @@ class TestLogReaderExtended:
             file_path=str(log_file),
             response_format=ResponseFormat.JSON
         )
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
         try:
@@ -146,6 +154,7 @@ class TestLogReaderExtended:
     async def test_log_reader_markdown_format(self, tmp_path):
         """Test log reader with Markdown format."""
         from troubleshooting_mcp.tools import log_reader
+        from unittest.mock import patch
 
         log_file = tmp_path / "test.log"
         log_file.write_text("Line 1\nLine 2\nLine 3\n")
@@ -166,7 +175,10 @@ class TestLogReaderExtended:
         params = LogFileInput(
             file_path=str(log_file),
         )
-        result = await func(params)
+
+        # Patch ALLOWED_LOG_DIRS
+        with patch("troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS", [str(tmp_path)]):
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "Log File" in result or "Line" in result
