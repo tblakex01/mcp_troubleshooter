@@ -5,6 +5,7 @@ Safe Command Execution Tool - Execute whitelisted diagnostic commands.
 import shutil
 import subprocess
 
+from ..constants import ARGUMENT_BLOCKLIST
 from ..models import SafeCommandInput
 from ..utils import check_character_limit, handle_error
 
@@ -67,6 +68,18 @@ def register_safe_command(mcp):
             command_path = shutil.which(params.command)
             if not command_path:
                 return f"Error: Command '{params.command}' not found on this system"
+
+            # Security Check: Validate against blocked arguments
+            if params.command in ARGUMENT_BLOCKLIST and params.args:
+                blocked_args = ARGUMENT_BLOCKLIST[params.command]
+                for arg in params.args:
+                    # Check exact matches or flags combined with other options (e.g. -f in -af)
+                    for blocked in blocked_args:
+                        if blocked == arg:
+                            return f"Error: Argument '{blocked}' is not allowed for command '{params.command}'"
+                        # Handle combined flags (e.g., -f blocked, user passes -af)
+                        if blocked.startswith("-") and len(blocked) == 2 and arg.startswith("-") and blocked[1] in arg:
+                             return f"Error: Argument '{blocked}' is not allowed for command '{params.command}'"
 
             # Prepare command with arguments
             cmd_list = [command_path] + params.args

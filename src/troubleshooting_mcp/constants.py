@@ -26,6 +26,14 @@ SAFE_COMMANDS = {
     "hostname",
 }
 
+# Blocklisted arguments for safe commands (security restriction)
+ARGUMENT_BLOCKLIST = {
+    "dig": ["-f"],  # Prevent reading from file
+    "ip": ["netns"],  # Prevent namespace operations
+    "lsof": ["-F"],  # Prevent easy machine parsing of sensitive data
+    "ss": ["-K"],  # Prevent killing sockets
+}
+
 # Common log file locations across different systems
 COMMON_LOG_PATHS = [
     # Linux system logs
