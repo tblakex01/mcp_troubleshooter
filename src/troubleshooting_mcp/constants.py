@@ -62,3 +62,12 @@ SENSITIVE_ENV_PATTERNS = [
     r"(?:^|_)CERT$",
     r"(?:^|_)PRIVATE$",
 ]
+
+# Blocklisted arguments for safe commands to prevent security risks
+ARGUMENT_BLOCKLIST = {
+    "dig": ["-f"],  # Prevent reading from files
+    "lsof": ["-F"],  # Prevent raw output format that might be misused
+    "ss": ["-K"],   # Prevent killing sockets
+    "ip": ["netns"], # Prevent network namespace modifications
+    "ping": ["-f"],  # Prevent flood ping (DoS)
+}
