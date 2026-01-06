@@ -36,8 +36,6 @@ def test_dependencies():
         except (ImportError, ModuleNotFoundError) as e:
             pytest.fail(f"{package} (not installed): {str(e)}")
 
-    return True
-
 def test_server_imports():
     """Verify the server file can be imported"""
     print("\nTesting server imports...", end=" ")
@@ -49,7 +47,6 @@ def test_server_imports():
         assert hasattr(server, 'mcp'), "Server module missing 'mcp' attribute"
         assert hasattr(server, 'main'), "Server module missing 'main' function"
         print("✓")
-        return True
     except (ImportError, ModuleNotFoundError) as e:
         pytest.fail(f"Failed to import server module: {str(e)}")
     except AssertionError as e:
@@ -136,6 +133,14 @@ def print_summary(results):
         print("3. Check that troubleshooting_mcp.py is in the current directory")
         return False
 
+def run_test_safe(test_func):
+    """Run a test function and return True if it passes, False otherwise"""
+    try:
+        test_func()
+        return True
+    except Exception:
+        return False
+
 def main():
     """Run all tests"""
     print("="*50)
@@ -143,12 +148,12 @@ def main():
     print("="*50)
 
     results = {
-        "Python Version": test_python_version(),
-        "Dependencies": test_dependencies(),
-        "Server Imports": test_server_imports(),
-        "psutil Functionality": test_psutil_functionality(),
-        "Pydantic Validation": test_pydantic_models(),
-        "Command Availability": test_command_availability()
+        "Python Version": run_test_safe(test_python_version),
+        "Dependencies": run_test_safe(test_dependencies),
+        "Server Imports": run_test_safe(test_server_imports),
+        "psutil Functionality": run_test_safe(test_psutil_functionality),
+        "Pydantic Validation": run_test_safe(test_pydantic_models),
+        "Command Availability": run_test_safe(test_command_availability)
     }
 
     success = print_summary(results)

@@ -62,3 +62,12 @@ SENSITIVE_ENV_PATTERNS = [
     r"(?:^|_)CERT$",
     r"(?:^|_)PRIVATE$",
 ]
+
+# Blocklist of dangerous arguments for safe commands
+# Format: command -> list of blocked flags/prefixes
+ARGUMENT_BLOCKLIST = {
+    "ping": ["-f"],  # Flood ping (DoS risk)
+    "dig": ["-f"],   # Read from file (Information Disclosure)
+    "lsof": ["-b"],  # Avoid kernel blocking calls (safety/stability)
+    "nc": ["-e"],    # Execute (though nc is not in safe list yet)
+}
