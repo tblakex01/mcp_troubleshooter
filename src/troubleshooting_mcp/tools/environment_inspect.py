@@ -10,8 +10,7 @@ import subprocess
 from ..models import EnvironmentSearchInput, ResponseFormat
 from ..utils import check_character_limit, handle_error
 
-# Sensitive keywords for environment variable masking
-# Variables containing these keywords (as whole words) will have their values masked
+# Sensitive keywords that trigger masking of environment variable values
 SENSITIVE_KEYWORDS = {
     "KEY",
     "SECRET",
@@ -101,15 +100,31 @@ def register_environment_inspect(mcp):
         try:
             # Get environment variables
             env_vars = {}
-
             for key, value in os.environ.items():
                 if params.pattern:
                     if params.pattern.lower() not in key.lower():
                         continue
 
-                # Mask sensitive values using word boundary matching
-                # This prevents false positives like KEYBOARD, MONKEY, DONKEY
-                is_sensitive = _is_sensitive_variable(key)
+                # Mask sensitive values
+                # Split key by underscores to match full words (e.g., 'API_KEY' matches 'KEY',
+                # but 'MONKEY' does not match 'KEY')
+                key_upper = key.upper()
+                key_parts = key_upper.split('_')
+
+                is_sensitive = any(
+                    keyword in key_parts for keyword in SENSITIVE_KEYWORDS
+                )
+
+                # Also check for exact matches if keywords don't have underscores
+                # or if the variable name doesn't use underscores
+                if not is_sensitive:
+                     # Fallback for things like 'APIKEY' if we add it to the list,
+                     # or specific highly sensitive substrings that should match even without boundaries.
+                     # For now, let's keep it safe by checking known strict substrings if needed.
+                     # But per feedback, we want to avoid false positives like 'KEYBOARD'.
+                     # So we stick to the split logic for generic terms like 'KEY'.
+                     pass
+
                 if is_sensitive:
                     env_vars[key] = "******** (masked for security)"
                 else:
