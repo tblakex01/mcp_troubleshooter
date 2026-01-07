@@ -24,6 +24,35 @@ SENSITIVE_KEYWORDS = {
 }
 
 
+def _is_sensitive_variable(var_name: str) -> bool:
+    """Check if an environment variable name contains sensitive keywords.
+    
+    Uses word boundary matching to avoid false positives like KEYBOARD, MONKEY, DONKEY.
+    A keyword matches if it appears as a complete word (separated by underscores or at boundaries).
+    
+    Args:
+        var_name: The environment variable name to check
+        
+    Returns:
+        True if the variable name contains sensitive keywords, False otherwise
+        
+    Examples:
+        >>> _is_sensitive_variable("API_KEY")
+        True
+        >>> _is_sensitive_variable("MY_SECRET")
+        True
+        >>> _is_sensitive_variable("KEYBOARD")
+        False
+        >>> _is_sensitive_variable("MONKEY_ISLAND")
+        False
+    """
+    # Split the variable name by underscores to get word components
+    parts = var_name.upper().split("_")
+    
+    # Check if any part exactly matches a sensitive keyword
+    return any(part in SENSITIVE_KEYWORDS for part in parts)
+
+
 def register_environment_inspect(mcp):
     """Register the environment inspection tool with the MCP server."""
 
