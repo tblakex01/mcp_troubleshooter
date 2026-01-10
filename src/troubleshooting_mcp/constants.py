@@ -26,6 +26,14 @@ SAFE_COMMANDS = {
     "hostname",
 }
 
+# Blocked arguments for safe commands (Security)
+ARGUMENT_BLOCKLIST = {
+    "ping": ["-f"],  # Flood ping
+    "dig": ["-f"],   # Batch mode (file read)
+    "lsof": ["-b"],  # Avoid kernel blocking (potential hang)
+    "nc": ["-e"],    # Execute command (netcat) - though nc is not in SAFE_COMMANDS
+}
+
 # Common log file locations across different systems
 COMMON_LOG_PATHS = [
     # Linux system logs
