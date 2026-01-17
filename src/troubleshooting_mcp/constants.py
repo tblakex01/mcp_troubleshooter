@@ -62,3 +62,10 @@ SENSITIVE_ENV_PATTERNS = [
     r"(?:^|_)CERT$",
     r"(?:^|_)PRIVATE$",
 ]
+
+# Blocklist of dangerous arguments for specific commands
+ARGUMENT_BLOCKLIST = {
+    "dig": {"-f"},  # -f reads from a file (potential LFI)
+    "ping": {"-f"},  # -f is flood ping (DoS risk)
+    "nc": {"-e"},    # -e executes a program (backdoor risk) - though nc is not in SAFE_COMMANDS, good practice
+}
