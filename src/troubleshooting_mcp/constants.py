@@ -26,6 +26,14 @@ SAFE_COMMANDS = {
     "hostname",
 }
 
+# Blocked arguments for safe commands to prevent abuse
+ARGUMENT_BLOCKLIST = {
+    "ip": ["-b", "-batch", "-n", "-netns", "netns"],
+    "dig": ["-f"],
+    "ping": ["-f"],
+    "lsof": ["+D"],
+}
+
 # Common log file locations across different systems
 COMMON_LOG_PATHS = [
     # Linux system logs

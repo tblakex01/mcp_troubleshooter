@@ -4,9 +4,9 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .constants import SAFE_COMMANDS
+from .constants import ARGUMENT_BLOCKLIST, SAFE_COMMANDS
 
 
 class ResponseFormat(str, Enum):
@@ -159,3 +159,19 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @model_validator(mode="after")
+    def validate_args(self) -> "SafeCommandInput":
+        command = self.command
+        args = self.args
+
+        if command in ARGUMENT_BLOCKLIST and args:
+            blocked_prefixes = ARGUMENT_BLOCKLIST[command]
+            for arg in args:
+                for blocked in blocked_prefixes:
+                    if arg.startswith(blocked):
+                        raise ValueError(
+                            f"Argument '{arg}' is not allowed for command '{command}' "
+                            f"(contains forbidden pattern '{blocked}')"
+                        )
+        return self
