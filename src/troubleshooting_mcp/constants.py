@@ -26,6 +26,15 @@ SAFE_COMMANDS = {
     "hostname",
 }
 
+# Blocklist of dangerous arguments for safe commands
+# Maps command name to list of blocked argument prefixes
+ARGUMENT_BLOCKLIST = {
+    "ping": ["-f"],  # Flood ping
+    "dig": ["-f"],   # Batch mode (file read)
+    "lsof": ["-b"],  # Avoid blocking calls
+    "nc": ["-e"],    # Execute command (if nc were allowed)
+}
+
 # Common log file locations across different systems
 COMMON_LOG_PATHS = [
     # Linux system logs
