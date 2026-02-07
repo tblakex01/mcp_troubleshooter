@@ -62,3 +62,11 @@ SENSITIVE_ENV_PATTERNS = [
     r"(?:^|_)CERT$",
     r"(?:^|_)PRIVATE$",
 ]
+
+# Blocklist of arguments that are too dangerous to allow
+ARGUMENT_BLOCKLIST = {
+    # dig -f allows reading arbitrary files
+    "dig": ["-f"],
+    # ping -f (flood) can cause DoS
+    "ping": ["-f"],
+}
