@@ -4,9 +4,9 @@ Pydantic models for input validation across all tools.
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .constants import SAFE_COMMANDS
+from .constants import SAFE_COMMANDS, ARGUMENT_BLOCKLIST
 
 
 class ResponseFormat(str, Enum):
@@ -159,3 +159,45 @@ class SafeCommandInput(BaseModel):
                 f"Allowed commands: {', '.join(sorted(SAFE_COMMANDS))}"
             )
         return cmd
+
+    @model_validator(mode="after")
+    def validate_args(self) -> "SafeCommandInput":
+        command = self.command
+        args = self.args
+
+        if not args:
+            return self
+
+        # Special handling for 'ip' command to differentiate -batch from -brief
+        if command == "ip":
+            for arg in args:
+                # Block -b, -batch, etc. unless it is specifically a variant of -brief
+                # -brief variants: -br, -bri, -brie, -brief
+                if arg.startswith("-b"):
+                    is_brief = False
+                    # Check if it matches a valid prefix of -brief (minimum -br)
+                    brief_variants = ["-br", "-bri", "-brie", "-brief"]
+                    if arg in brief_variants:
+                        is_brief = True
+
+                    if not is_brief:
+                        raise ValueError(
+                            f"Argument '{arg}' is not allowed for command '{command}'. "
+                            "Batch mode (-b, -batch) is restricted for security reasons."
+                        )
+
+        # Check against blocklist for other commands
+        # We skip 'ip' here because it has custom handling above
+        if command != "ip" and command in ARGUMENT_BLOCKLIST:
+            blocked_prefixes = ARGUMENT_BLOCKLIST[command]
+            for arg in args:
+                for blocked in blocked_prefixes:
+                    # Check if argument starts with blocked prefix
+                    # This handles joined flags like -f/etc/passwd
+                    if arg.startswith(blocked):
+                        raise ValueError(
+                            f"Argument '{arg}' is not allowed for command '{command}'. "
+                            f"Arguments starting with '{blocked}' are restricted for security reasons."
+                        )
+
+        return self
