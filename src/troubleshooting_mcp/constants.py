@@ -32,6 +32,18 @@ ARGUMENT_BLOCKLIST = {
     "dig": ["-f"],
     "ping": ["-f"],
     "lsof": ["+D"],
+    "ss": [
+        "-D",
+        "--diag",
+        "-F",
+        "--filter",
+        "-K",
+        "--kill",
+        "-N",
+        "--net",
+    ],
+    "du": ["--files0-from"],
+    "hostname": ["-F", "--file"],
 }
 
 # Common log file locations across different systems
