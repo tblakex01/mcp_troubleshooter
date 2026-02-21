@@ -36,3 +36,50 @@ def test_safe_command_argument_blocking():
     # Valid commands should still work
     SafeCommandInput(command="ping", args=["-c", "4", "google.com"])
     SafeCommandInput(command="ip", args=["addr", "show"])
+
+def test_safe_command_additional_blocks():
+    """Test blocking of dangerous arguments for ss, du, and hostname."""
+
+    # ss -D (Arbitrary file overwrite)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["-D", "/tmp/pwned.txt"])
+
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["--diag", "/tmp/pwned.txt"])
+
+    # ss -F (Arbitrary file read)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["-F", "/etc/passwd"])
+
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["--filter", "/etc/passwd"])
+
+    # ss -K (Destructive - kill sockets)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["-K"])
+
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["--kill"])
+
+    # ss -N (Namespace switching)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["-N", "testns"])
+
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="ss", args=["--net", "testns"])
+
+    # du --files0-from (Arbitrary file read via error message)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="du", args=["--files0-from", "/etc/shadow"])
+
+    # hostname -F (Set hostname from file / Read file content via hostname)
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="hostname", args=["-F", "/etc/passwd"])
+
+    with pytest.raises(ValidationError, match="Argument .* is not allowed"):
+        SafeCommandInput(command="hostname", args=["--file", "/etc/passwd"])
+
+    # Valid commands should still work
+    SafeCommandInput(command="ss", args=["-t", "-a"])
+    SafeCommandInput(command="du", args=["-h", "/var/log"])
+    SafeCommandInput(command="hostname", args=[])
