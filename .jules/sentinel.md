@@ -7,3 +7,8 @@
 **Vulnerability:** The `safe_command` tool whitelisted command binaries but allowed arbitrary arguments, enabling abuse (e.g., `ip netns exec` for RCE, `ping -f` for DoS).
 **Learning:** Whitelisting binaries is insufficient for security if the binary supports flags that allow command execution, file system access, or resource exhaustion. Tools like `ip`, `find`, or `awk` are dual-use and can be weaponized via arguments.
 **Prevention:** Implement strict argument validation (allowlist preferred, or robust blocklist) alongside binary whitelisting. For complex tools like `ip`, block specific subcommands or flags known to be dangerous.
+
+## 2025-11-05 - Server-Side Request Forgery (SSRF) in Network Diagnostic Tool
+**Vulnerability:** The `troubleshooting_test_network_connectivity` tool allowed connecting to arbitrary hostnames and IP addresses, including localhost (`127.0.0.1`), private networks (`10.0.0.0/8`), and link-local addresses like the AWS metadata service (`169.254.169.254`).
+**Learning:** Diagnostic tools that interact with user-provided network addresses act as proxies, inherently enabling SSRF if not properly restricted. DNS rebinding allows bypassing simple regex-based domain validation.
+**Prevention:** Implement multi-layer SSRF protection: block known internal hostnames and IP addresses at the input validation layer, and additionally parse the resolved IP address (post DNS resolution) against standard private/internal/loopback ranges before initiating any connection.

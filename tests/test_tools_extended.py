@@ -6,6 +6,8 @@ import json
 from unittest.mock import MagicMock
 import pytest
 
+from unittest.mock import MagicMock, patch
+
 from troubleshooting_mcp.models import (
     EnvironmentSearchInput,
     LogFileInput,
@@ -160,13 +162,14 @@ class TestLogReaderExtended:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(
-            file_path=str(log_file),
-        )
-        result = await func(params)
+            func = tool_funcs[0]
+            params = LogFileInput(
+                file_path=str(log_file),
+            )
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "Log File" in result or "Line" in result
@@ -217,7 +220,7 @@ class TestNetworkDiagnosticExtended:
 
         func = tool_funcs[0]
         params = NetworkDiagnosticInput(
-            host="localhost",
+            host="8.8.8.8",
         )
         result = await func(params)
 
@@ -242,7 +245,7 @@ class TestNetworkDiagnosticExtended:
 
         func = tool_funcs[0]
         params = NetworkDiagnosticInput(
-            host="127.0.0.1",
+            host="8.8.8.8",
             port=54321,
             timeout=1,
         )
@@ -269,7 +272,7 @@ class TestNetworkDiagnosticExtended:
 
         func = tool_funcs[0]
         params = NetworkDiagnosticInput(
-            host="localhost",
+            host="8.8.8.8",
         )
         result = await func(params)
 
