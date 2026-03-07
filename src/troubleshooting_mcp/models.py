@@ -91,6 +91,22 @@ class NetworkDiagnosticInput(BaseModel):
     def validate_host(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("Host cannot be empty or whitespace only")
+
+        host = v.strip().lower()
+        if host in ("localhost", "localhost.localdomain"):
+            raise ValueError(f"Host '{v}' is not allowed (internal/local addresses are blocked)")
+
+        import ipaddress
+        try:
+            # Check if it's an IP address string
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            ip = None
+
+        if ip:
+            if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
+                raise ValueError(f"IP address '{v}' is not allowed (internal/private addresses are blocked)")
+
         return v.strip()
 
 

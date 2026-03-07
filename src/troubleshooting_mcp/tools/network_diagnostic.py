@@ -66,6 +66,15 @@ def register_network_diagnostic(mcp):
             start_time = datetime.now()
             try:
                 ip_address = socket.gethostbyname(params.host)
+
+                # SSRF Protection: Check if resolved IP is internal/private
+                import ipaddress
+                ip_obj = ipaddress.ip_address(ip_address)
+                if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_multicast or ip_obj.is_unspecified:
+                    result_lines.append("✗ **Security Error:** Connection Blocked")
+                    result_lines.append(f"  - Error: Host resolves to a restricted internal/private IP address ({ip_address})")
+                    return "\n".join(result_lines)
+
                 dns_time = (datetime.now() - start_time).total_seconds() * 1000
                 result_lines.append("✓ **DNS Resolution:** Success")
                 result_lines.append(f"  - IP Address: {ip_address}")

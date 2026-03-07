@@ -167,10 +167,10 @@ class TestAdditionalCoverageNetworkDiagnostic:
 
         # Test different scenarios
         test_cases = [
-            {"host": "localhost"},
-            {"host": "127.0.0.1"},
-            {"host": "localhost", "port": 22},
-            {"host": "127.0.0.1", "port": 443, "timeout": 2},
+            {"host": "8.8.8.8"},
+            {"host": "1.1.1.1"},
+            {"host": "8.8.8.8", "port": 22},
+            {"host": "1.1.1.1", "port": 443, "timeout": 2},
         ]
 
         for case in test_cases:
