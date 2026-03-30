@@ -2,6 +2,7 @@
 Network Diagnostic Tool - Test network connectivity.
 """
 
+import ipaddress
 import socket
 from datetime import datetime
 
@@ -67,10 +68,9 @@ def register_network_diagnostic(mcp):
             try:
                 ip_address = socket.gethostbyname(params.host)
 
-                # SSRF Protection: Check if resolved IP is internal/private
-                import ipaddress
+                # SSRF Protection: Check if resolved IP is non-global or multicast
                 ip_obj = ipaddress.ip_address(ip_address)
-                if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_multicast or ip_obj.is_unspecified:
+                if not ip_obj.is_global or ip_obj.is_multicast:
                     result_lines.append("✗ **Security Error:** Connection Blocked")
                     result_lines.append(f"  - Error: Host resolves to a restricted internal/private IP address ({ip_address})")
                     return "\n".join(result_lines)

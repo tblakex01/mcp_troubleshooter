@@ -103,9 +103,8 @@ class NetworkDiagnosticInput(BaseModel):
         except ValueError:
             ip = None
 
-        if ip:
-            if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_multicast or ip.is_unspecified:
-                raise ValueError(f"IP address '{v}' is not allowed (internal/private addresses are blocked)")
+        if ip and (not ip.is_global or ip.is_multicast):
+            raise ValueError(f"IP address '{v}' is not allowed (non-global addresses are blocked)")
 
         return v.strip()
 
