@@ -188,11 +188,12 @@ class TestLogReaderTool:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), lines=10)
-        result = await func(params)
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), lines=10)
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "INFO Application started" in result or "Application started" in result
@@ -219,11 +220,12 @@ class TestLogReaderTool:
             return decorator
 
         mcp.tool = mock_tool
-        log_reader.register_log_reader(mcp)
 
-        func = tool_funcs[0]
-        params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
-        result = await func(params)
+        with patch('troubleshooting_mcp.tools.log_reader.ALLOWED_LOG_DIRS', [str(tmp_path)]):
+            log_reader.register_log_reader(mcp)
+            func = tool_funcs[0]
+            params = LogFileInput(file_path=str(log_file), search_pattern="ERROR")
+            result = await func(params)
 
         assert isinstance(result, str)
         assert "ERROR" in result
@@ -260,6 +262,7 @@ class TestNetworkDiagnosticTool:
     async def test_network_diagnostic_localhost(self):
         """Test network diagnostic with localhost."""
         from troubleshooting_mcp.tools import network_diagnostic
+        from pydantic import ValidationError
 
         mcp = MagicMock()
         tool_funcs = []
@@ -273,11 +276,8 @@ class TestNetworkDiagnosticTool:
         mcp.tool = mock_tool
         network_diagnostic.register_network_diagnostic(mcp)
 
-        func = tool_funcs[0]
-        params = NetworkDiagnosticInput(host="localhost")
-        result = await func(params)
-
-        assert isinstance(result, str)
+        with pytest.raises(ValidationError):
+            NetworkDiagnosticInput(host="localhost")
 
     @pytest.mark.asyncio
     async def test_network_diagnostic_with_port(self):
@@ -297,7 +297,8 @@ class TestNetworkDiagnosticTool:
         network_diagnostic.register_network_diagnostic(mcp)
 
         func = tool_funcs[0]
-        params = NetworkDiagnosticInput(host="127.0.0.1", port=54321, timeout=1)
+        # Use an external IP (since internal IPs are blocked now)
+        params = NetworkDiagnosticInput(host="8.8.8.8", port=54321, timeout=1)
         result = await func(params)
 
         assert isinstance(result, str)
@@ -306,6 +307,7 @@ class TestNetworkDiagnosticTool:
     async def test_network_diagnostic_ipv4(self):
         """Test network diagnostic with IPv4 address."""
         from troubleshooting_mcp.tools import network_diagnostic
+        from pydantic import ValidationError
 
         mcp = MagicMock()
         tool_funcs = []
@@ -319,12 +321,9 @@ class TestNetworkDiagnosticTool:
         mcp.tool = mock_tool
         network_diagnostic.register_network_diagnostic(mcp)
 
-        func = tool_funcs[0]
-        params = NetworkDiagnosticInput(host="127.0.0.1")
-        result = await func(params)
-
-        assert isinstance(result, str)
-        assert len(result) > 0
+        # 127.0.0.1 should be blocked by validation
+        with pytest.raises(ValidationError):
+            NetworkDiagnosticInput(host="127.0.0.1")
 
 
 class TestProcessSearchTool:
